@@ -1,0 +1,23 @@
+# 依赖目录
+node_modules/
+
+# 日志文件
+*.log
+
+# 环境变量文件
+.env
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# 编译输出
+dist/
+build/
+
+# 测试报告
+coverage/
+
+# 临时文件
+*.tmp
+*.temp
