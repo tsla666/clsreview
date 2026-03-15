@@ -37,9 +37,9 @@ function getLastTradingDay(date) {
 }
 
 /**
- * 使用爬虫获取财联社焦点复盘全文
+ * 使用爬虫获取财联社焦点复盘全文和链接
  * @param {Date} targetDate - 目标日期
- * @returns {string} - 焦点复盘全文
+ * @returns {Object} - 包含全文和链接的对象
  */
 function getFocusReplayFullText(targetDate) {
   try {
@@ -61,15 +61,32 @@ function getFocusReplayFullText(targetDate) {
     // 检查输出是否包含错误信息
     if (output === "未找到焦点复盘内容" || output.includes("爬虫执行出错") || output.includes("请求失败")) {
       console.log('爬虫获取全文失败，返回null');
-      return null;
+      return { content: null, link: null };
+    }
+    
+    // 解析内容和链接
+    let content = null;
+    let link = null;
+    
+    const contentStartIndex = output.indexOf('CONTENT_START');
+    const contentEndIndex = output.indexOf('CONTENT_END');
+    if (contentStartIndex !== -1 && contentEndIndex !== -1) {
+      content = output.substring(contentStartIndex + 13, contentEndIndex).trim();
+    }
+    
+    const linkStartIndex = output.indexOf('LINK_START');
+    const linkEndIndex = output.indexOf('LINK_END');
+    if (linkStartIndex !== -1 && linkEndIndex !== -1) {
+      link = output.substring(linkStartIndex + 10, linkEndIndex).trim();
     }
     
     console.log('爬虫获取全文成功');
-    console.log('爬虫返回内容长度:', output.length);
-    return output;
+    console.log('爬虫返回内容长度:', content ? content.length : 0);
+    console.log('爬虫返回链接:', link);
+    return { content, link };
   } catch (error) {
     console.error('爬虫获取全文失败:', error.message);
-    return null;
+    return { content: null, link: null };
   }
 }
 
@@ -94,8 +111,8 @@ async function getClsFocusReplay() {
     
     console.log(`获取${dateStr}的财联社焦点复盘内容`);
     
-    // 1. 使用爬虫获取全文
-    let fullText = getFocusReplayFullText(targetDate);
+    // 1. 使用爬虫获取全文和链接
+    const { content: fullText, link: focusReplayLink } = getFocusReplayFullText(targetDate);
     
     if (!fullText) {
       console.log('爬虫获取全文失败，使用大模型生成内容');
@@ -145,7 +162,7 @@ async function getClsFocusReplay() {
     
     // 2. 使用大模型分析总结
     // 优化prompt结构，减少不必要的内容，确保在token限制范围内
-    const summaryPrompt = `请根据以下财联社焦点复盘原文，按照要求进行分析总结：\n\n原文：\n${processedText}\n\n输出要求：\n1. 格式：5个章节（市场概览、主线板块、支线板块、情绪指标监测、原文关键信息摘录）\n2. 核心逻辑2-3句话\n3. 使用表情符号和・符号列表\n4. 禁止预测和建议\n5. 禁止简写字段名\n6. 使用Markdown格式\n\n详细格式：\n一、x月x日核心要点\n【焦点复盘】（后接上标题内容）\n- 大盘与成交：总结三大指数涨跌幅、涨跌家数比、两市成交额及环比增减百分比\n- 主线切换：对比昨日领涨板块，描述资金流向风格转变\n- 资金动向：包含北向资金净流入/流出金额及重点加仓方向\n\n二、领涨板块及背后逻辑\n按强度排序列出3-5个核心板块，每个板块包含：\n- 板块名称及涨幅区间\n- 3-5个核心标的（使用・符号列表）\n- 核心逻辑（结合全球科技映射、政策催化、高频数据）\n\n三、领跌板块及逻辑\n简述表现最差的1-2个板块及其回调原因\n\n四、短线情绪周期判定\n- 情绪指标：涨停家数、跌停家数、封板率、连板高度\n- 周期定位：当前处于哪个阶段\n- 综合结论：用一句话总结当前市场由谁主导\n\n五、原文关键信息摘录\n列出3-5条原文中的关键数据和信息\n\n写作风格：\n- 使用专业术语（如G.652.D光纤、HDI板、HBM封装、算力映射、高低切换等）\n- 数据支撑（引用百分比、成交额、量比等数据）\n- 视觉清晰：\n  ・**减少#号和星号的使用**，避免过度格式化\n  ・使用简单的Markdown格式，主要使用列表和适当的加粗\n  ・保持格式简洁，提高可读性\n  ・不要使用过多的层级和嵌套`;
+    const summaryPrompt = `请根据以下财联社焦点复盘原文，按照要求进行分析总结：\n\n原文：\n${processedText}\n\n输出要求：\n1. 格式：5个章节（市场概览、主线板块、支线板块、情绪指标监测、原文关键信息摘录）\n2. 核心逻辑2-3句话\n3. 使用表情符号和・符号列表\n4. 禁止预测和建议\n5. 禁止简写字段名\n6. 使用简洁的Markdown格式\n\n详细格式：\n一、x月x日核心要点\n【焦点复盘】（后接上标题内容）\n- 大盘与成交：总结三大指数涨跌幅、涨跌家数比、两市成交额及环比增减百分比\n- 主线切换：对比昨日领涨板块，描述资金流向风格转变\n\n二、领涨板块及背后逻辑\n按强度排序列出3-5个核心板块，每个板块包含：\n- 板块名称及涨幅区间\n- 3-5个核心标的（使用・符号列表）\n- 核心逻辑：结合全球科技映射、政策催化、高频数据进行分析\n\n三、领跌板块及逻辑\n简述表现最差的1-2个板块及其回调原因\n\n四、短线情绪周期判定\n- 情绪指标：涨停家数、跌停家数、封板率、连板高度\n- 周期定位：当前处于哪个阶段\n- 综合结论：用一句话总结当前市场由谁主导\n\n五、原文关键信息摘录\n列出3-5条原文中的关键数据和信息\n\n写作风格：\n- 使用专业术语（如G.652.D光纤、HDI板、HBM封装、算力映射、高低切换等）\n- 数据支撑（引用百分比、成交额、量比等数据）\n- 视觉清晰：\n  ・**完全避免使用星号**，不要使用加粗格式\n  ・使用简单的Markdown格式，只使用列表和必要的标题\n  ・保持格式简洁，提高可读性\n  ・不要使用过多的层级和嵌套\n  ・使用自然的文本格式，避免过度格式化`;
     
     console.log('正在调用DeepSeek大模型进行分析总结...');
     console.log('Prompt长度:', summaryPrompt.length);
@@ -180,7 +197,13 @@ async function getClsFocusReplay() {
       }
     );
     
-    const summaryContent = response.data.choices[0].message.content;
+    let summaryContent = response.data.choices[0].message.content;
+    
+    // 在原文关键信息摘录部分的最后添加当天焦点复盘的链接
+    if (focusReplayLink) {
+      summaryContent += `\n\n当天焦点复盘的链接：${focusReplayLink}`;
+    }
+    
     console.log('分析总结成功');
     console.log('总结内容:', summaryContent);
     return { content: summaryContent, dateStr: dateStr };
@@ -188,11 +211,11 @@ async function getClsFocusReplay() {
     console.error('调用大模型分析总结失败:', error.message);
     // 如果API调用失败，使用模拟数据
     console.log('使用模拟数据作为分析总结内容');
-    const mockContent = `一、3月15日核心要点
+    const mockContent = `一、核心要点
 【焦点复盘】市场震荡上行，科技板块表现强势
 - 大盘与成交：沪指上涨0.85%，深成指上涨1.23%，创业板指上涨1.56%。上涨3256家，下跌1744家，涨跌比1.87:1。两市成交额9876亿元（环比+5.2%），放量上涨。
 - 主线切换：资金从防御板块转向成长板块，科技主线持续走强。
-- 资金动向：北向资金净流入45.68亿元，连续3日净流入，重点加仓科技成长赛道。
+
 
 二、领涨板块及背后逻辑
 1. 半导体
