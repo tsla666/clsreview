@@ -5,7 +5,7 @@ import time
 import argparse
 
 def get_focus_replay_by_date(target_date):
-    """根据指定日期获取焦点复盘全文"""
+    """根据指定日期获取焦点复盘全文和链接"""
     list_url = "https://www.cls.cn/subject/1135"
     
     # 模拟浏览器的Headers
@@ -24,7 +24,7 @@ def get_focus_replay_by_date(target_date):
         
         if response.status_code != 200:
             print(f"列表页请求失败: {response.status_code}")
-            return None
+            return None, None
         
         # 解析列表页
         soup = BeautifulSoup(response.text, "html.parser")
@@ -72,17 +72,18 @@ def get_focus_replay_by_date(target_date):
                             content = detail_soup.get_text(strip=True)
                             if content:
                                 print(f"\n{target_date}财联社焦点复盘全文获取成功")
-                                print(f"内容长度: {len(content)}字符")
-                                return content
+                                print(f"内容长度: {len(content)}")
+                                print(f"焦点复盘链接: {target_url}")
+                                return content, target_url
                             else:
                                 print("未找到正文内容")
                 parent = parent.parent
         
         print(f"未找到{target_date}的焦点复盘链接")
-        return None
+        return None, None
     except Exception as e:
         print(f"爬虫执行出错: {str(e)}")
-        return None
+        return None, None
 
 if __name__ == "__main__":
     # 解析命令行参数
@@ -91,9 +92,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     target = args.date
-    content = get_focus_replay_by_date(target)
-    if content:
-        # 直接输出全文内容，不添加额外的格式化信息
-        print(content)
+    content, link = get_focus_replay_by_date(target)
+    if content and link:
+        # 输出内容和链接，用特殊分隔符分开
+        print(f"CONTENT_START\n{content}\nCONTENT_END\nLINK_START\n{link}\nLINK_END")
+    elif content:
+        # 只有内容，没有链接
+        print(f"CONTENT_START\n{content}\nCONTENT_END")
     else:
         print("未找到焦点复盘内容")
