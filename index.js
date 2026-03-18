@@ -318,7 +318,7 @@ async function sendToFeishu(content, dateStr) {
 }
 
 /**
- * 主函数
+ * 主函数 - 财联社焦点复盘分析
  */
 async function main() {
   try {
@@ -336,16 +336,50 @@ async function main() {
   }
 }
 
-// 设置定时任务，每天下午6点15分运行
+/**
+ * 早上推送函数 - Stan决策辅助
+ */
+async function sendMorningMessage() {
+  try {
+    console.log('正在发送早上推送消息...');
+    
+    // 获取当天日期
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}年${month}月${day}日`;
+    
+    // 生成早上推送内容 - 只包含Stan决策辅助原文
+    const morningContent = `Stan终极三问\n\n在完成 Catfish 所有复盘分析后，必须强制通过这三个关卡，否则不准执行计划：\n\n1. 【反身性校验】\n"如果分析出的'受力逻辑'（如国产替代、能级跃迁）是正确的，为什么目前的'价格行为'表现得像个输家？"\n\n应用： 如果模型评分很高但股价连跌三天。\nStan 决策： 承认模型可能"领先"于市场，但身体要先撤出。不要用金钱去赌模型比市场更聪明。\n\n2. 【零基仓位压测】\n"假设我今天没有任何持仓（空仓），面对现在的价格和消息，我会一次性买入目前这么重的仓位吗？"\n\n应用： 针对你的持仓科技股。\nStan 决策： 如果答案是"不会，我可能只敢买 2 成试探"，那么你多出来的 5 成就是**"非计划性头寸"**，必须在明早 9:30 立刻抹掉\n\n3. 【资本守卫熔断】\n"我现在持有的仓位，是否正在损耗我下一次'扣动重仓扳机'的本金和心态？"\n应用： 评估你的焦虑感。\nStan 决策： 如果目前的波动让你无法冷静思考、开始报复性加仓，说明你已经失去了"职业猎人"的身份。减仓到你不再焦虑为止，哪怕逻辑依然看好。`;
+    
+    // 发送到飞书群
+    await sendToFeishu(morningContent, dateStr);
+    console.log('早上推送消息发送成功');
+  } catch (error) {
+    console.error('早上推送消息发送失败:', error.message);
+  }
+}
+
+// 设置定时任务
 function setupSchedule() {
   console.log('正在设置定时任务...');
-  // 每天下午6点15分执行
-  const job = schedule.scheduleJob('15 18 * * *', async function() {
+  
+  // 每天下午6点15分执行财联社焦点复盘分析
+  const job1 = schedule.scheduleJob('15 18 * * *', async function() {
     console.log('定时任务触发，开始执行财联社焦点复盘分析...');
     await main();
   });
-  console.log('定时任务设置成功，将在每天下午6:15执行');
-  console.log('下次执行时间:', job.nextInvocation());
+  console.log('定时任务1设置成功，将在每天下午6:15执行');
+  console.log('下次执行时间:', job1.nextInvocation());
+  
+  // 每天早上7点执行Stan决策辅助推送
+  const job2 = schedule.scheduleJob('0 7 * * *', async function() {
+    console.log('定时任务触发，开始发送Stan决策辅助消息...');
+    await sendMorningMessage();
+  });
+  console.log('定时任务2设置成功，将在每天早上7:00执行');
+  console.log('下次执行时间:', job2.nextInvocation());
 }
 
 // 运行主函数
