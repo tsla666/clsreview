@@ -34,6 +34,4 @@ jobs:
         run: node index.js
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1/chat/completions' }}
-          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL || 'deepseek-chat' }}
           FEISHU_WEBHOOKS: ${{ secrets.FEISHU_WEBHOOKS }}
