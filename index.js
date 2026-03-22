@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { execSync } = require('child_process');
-const config = require('./config');
+
 const schedule = require('node-schedule');
 const fs = require('fs');
 const path = require('path');
