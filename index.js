@@ -218,7 +218,7 @@ async function sendToFeishu(content, dateStr) {
     };
     
     // 遍历所有飞书机器人webhook地址
-    const webhooks = (process.env.FEISHU_WEBHOOKS || '').split(',').filter(Boolean);
+    const webhooks = (process.env.FEISHU_WEBHOOK|| '').split(',').filter(Boolean);
     const results = [];
     
     for (const webhook of webhooks) {
