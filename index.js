@@ -1,6 +1,5 @@
 const axios = require('axios');
 const { execSync } = require('child_process');
-
 const schedule = require('node-schedule');
 const fs = require('fs');
 const path = require('path');
@@ -120,9 +119,9 @@ async function getClsFocusReplay() {
       const generatePrompt = `请生成${dateStr}财联社的焦点复盘栏目原文内容：\n\n要求：\n1. 内容开头必须是"财联社${month}月${day}日讯"\n2. 内容要完整，包含市场概况、板块表现、市场热点等所有部分\n3. 数据要准确，包含具体的指数涨跌幅、成交额、涨跌家数等详细数据\n4. 保持原文的结构、格式和风格，不要进行任何修改\n5. 不要添加任何分析、评论或个人观点，只提供原文内容`;
       
       const generateResponse = await axios.post(
-        config.deepseek.baseUrl,
+        process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1/chat/completions',
         {
-          model: config.deepseek.model,
+          model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
           messages: [
             {
               role: 'system',
@@ -139,7 +138,7 @@ async function getClsFocusReplay() {
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.deepseek.apiKey}`
+            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
           },
           timeout: 30000
         }
@@ -169,9 +168,9 @@ async function getClsFocusReplay() {
     
     // 优化API调用参数
     const response = await axios.post(
-      config.deepseek.baseUrl,
+      process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1/chat/completions',
       {
-        model: config.deepseek.model,
+        model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
         messages: [
           {
             role: 'system',
@@ -191,7 +190,7 @@ async function getClsFocusReplay() {
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.deepseek.apiKey}`
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
         },
         timeout: 120000 // 增加超时时间到120秒
       }
@@ -295,7 +294,7 @@ async function sendToFeishu(content, dateStr) {
     };
     
     // 遍历所有飞书机器人webhook地址
-    const webhooks = config.feishuWebhooks || [];
+    const webhooks = (process.env.FEISHU_WEBHOOKS || '').split(',').filter(Boolean);
     const results = [];
     
     for (const webhook of webhooks) {
@@ -351,7 +350,7 @@ async function sendMorningMessage() {
     const dateStr = `${year}年${month}月${day}日`;
     
     // 生成早上推送内容 - 只包含Stan决策辅助原文
-    const morningContent = `Stan终极三问\n\n在完成 Catfish 所有复盘分析后，必须强制通过这三个关卡，否则不准执行计划：\n\n1. 【反身性校验】\n"如果分析出的'受力逻辑'（如国产替代、能级跃迁）是正确的，为什么目前的'价格行为'表现得像个输家？"\n\n应用： 如果模型评分很高但股价连跌三天。\nStan 决策： 承认模型可能"领先"于市场，但身体要先撤出。不要用金钱去赌模型比市场更聪明。\n\n2. 【零基仓位压测】\n"假设我今天没有任何持仓（空仓），面对现在的价格和消息，我会一次性买入目前这么重的仓位吗？"\n\n应用： 针对你的持仓科技股。\nStan 决策： 如果答案是"不会，我可能只敢买 2 成试探"，那么你多出来的 5 成就是**"非计划性头寸"**，必须在明早 9:30 立刻抹掉\n\n3. 【资本守卫熔断】\n"我现在持有的仓位，是否正在损耗我下一次'扣动重仓扳机'的本金和心态？"\n应用： 评估你的焦虑感。\nStan 决策： 如果目前的波动让你无法冷静思考、开始报复性加仓，说明你已经失去了"职业猎人"的身份。减仓到你不再焦虑为止，哪怕逻辑依然看好。`;
+    const morningContent = `Stan 决策辅助：每日"三个终极自问"\n\n在完成 Catfish 所有复盘分析后，必须强制通过这三个关卡，否则不准执行计划：\n\n1. 【反身性校验】\n"如果分析出的'受力逻辑'（如国产替代、能级跃迁）是正确的，为什么目前的'价格行为'表现得像个输家？"\n\n应用： 如果模型评分很高但股价连跌三天。\nStan 决策： 承认模型可能"领先"于市场，但身体要先撤出。不要用金钱去赌模型比市场更聪明。\n\n2. 【零基仓位压测】\n"假设我今天没有任何持仓（空仓），面对现在的价格和消息，我会一次性买入目前这么重的仓位吗？"\n\n应用： 针对你的持仓科技股。\nStan 决策： 如果答案是"不会，我可能只敢买 2 成试探"，那么你多出来的 5 成就是**"非计划性头寸"**，必须在明早 9:30 立刻抹掉\n\n3. 【资本守卫熔断】\n"我现在持有的仓位，是否正在损耗我下一次'扣动重仓扳机'的本金和心态？"\n应用： 评估你的焦虑感。\nStan 决策： 如果目前的波动让你无法冷静思考、开始报复性加仓，说明你已经失去了"职业猎人"的身份。减仓到你不再焦虑为止，哪怕逻辑依然看好。`;
     
     // 发送到飞书群
     await sendToFeishu(morningContent, dateStr);
