@@ -96,6 +96,12 @@ async function getClsFocusReplay() {
   try {
     console.log('正在获取财联社焦点复盘内容...');
     
+    // 验证API密钥是否设置
+    if (!process.env.DEEPSEEK_API_KEY) {
+      console.error('错误: DEEPSEEK_API_KEY 环境变量未设置');
+      throw new Error('DEEPSEEK_API_KEY 环境变量未设置');
+    }
+    
     // 获取当前日期
     const today = new Date();
     // 确定要搜索的日期（最近一个交易日）
@@ -114,37 +120,8 @@ async function getClsFocusReplay() {
     const { content: fullText, link: focusReplayLink } = getFocusReplayFullText(targetDate);
     
     if (!fullText) {
-      console.log('爬虫获取全文失败，使用大模型生成内容');
-      // 如果爬虫失败，使用大模型生成内容
-      const generatePrompt = `请生成${dateStr}财联社的焦点复盘栏目原文内容：\n\n要求：\n1. 内容开头必须是"财联社${month}月${day}日讯"\n2. 内容要完整，包含市场概况、板块表现、市场热点等所有部分\n3. 数据要准确，包含具体的指数涨跌幅、成交额、涨跌家数等详细数据\n4. 保持原文的结构、格式和风格，不要进行任何修改\n5. 不要添加任何分析、评论或个人观点，只提供原文内容`;
-      
-      const generateResponse = await axios.post(
-        process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1/chat/completions',
-        {
-          model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
-          messages: [
-            {
-              role: 'system',
-              content: '你是一个专业的金融数据处理助手，能够生成财联社焦点复盘内容。'
-            },
-            {
-              role: 'user',
-              content: generatePrompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`
-          },
-          timeout: 30000
-        }
-      );
-      
-      fullText = generateResponse.data.choices[0].message.content;
+      console.log('爬虫获取全文失败，跳过分析');
+      throw new Error('爬虫获取全文失败');
     }
     
     console.log('获取到焦点复盘内容，开始分析总结...');
@@ -208,60 +185,7 @@ async function getClsFocusReplay() {
     return { content: summaryContent, dateStr: dateStr };
   } catch (error) {
     console.error('调用大模型分析总结失败:', error.message);
-    // 如果API调用失败，使用模拟数据
-    console.log('使用模拟数据作为分析总结内容');
-    const mockContent = `一、核心要点
-【焦点复盘】市场震荡上行，科技板块表现强势
-- 大盘与成交：沪指上涨0.85%，深成指上涨1.23%，创业板指上涨1.56%。上涨3256家，下跌1744家，涨跌比1.87:1。两市成交额9876亿元（环比+5.2%），放量上涨。
-- 主线切换：资金从防御板块转向成长板块，科技主线持续走强。
-
-
-二、领涨板块及背后逻辑
-1. 半导体
-   - 涨幅区间：3.2%-5.6%
-   - 核心标的：
-     ・中芯国际
-     ・韦尔股份
-     ・兆易创新
-   - 核心逻辑：国产替代加速，全球半导体销售额同比+46.1%，行业景气度持续提升。
-
-2. 人工智能
-   - 涨幅区间：2.8%-4.9%
-   - 核心标的：
-     ・科大讯飞
-     ・寒武纪
-     ・商汤科技
-   - 核心逻辑：GPT-5发布预期，算力需求爆发，AI应用落地加速。
-
-3. 新能源
-   - 涨幅区间：1.5%-3.8%
-   - 核心标的：
-     ・宁德时代
-     ・比亚迪
-     ・隆基绿能
-   - 核心逻辑：政策支持力度加大，销量数据超预期，行业处于高景气周期。
-
-三、领跌板块及逻辑
-- 银行板块：涨幅落后，主要受资金流向科技板块影响，防御性板块暂时承压。
-
-四、短线情绪周期判定
-- 情绪指标：涨停家数56家（环比+12%），跌停家数8家（环比-33%），封板率72%（环比+5%），连板高度5板（王力安防）。
-- 周期定位：主升期
-- 综合结论：多头主导，科技主线主升，赚钱效应集中于半导体和人工智能板块。
-
-五、原文关键信息摘录
-- 半导体板块：国产替代进程加速，设备材料突破
-- 人工智能：GPT-5技术迭代，算力需求爆发式增长
-- 新能源：政策支持力度加大，销量数据超预期
-- 北向资金：连续净流入，重点加仓科技成长赛道`;
-    // 在catch块中重新获取日期
-    const today = new Date();
-    const targetDate = isTradingDay(today) ? today : getLastTradingDay(today);
-    const year = targetDate.getFullYear();
-    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
-    const day = String(targetDate.getDate()).padStart(2, '0');
-    const dateStr = `${year}年${month}月${day}日`;
-    return { content: mockContent, dateStr: dateStr };
+    throw error;
   }
 }
 
