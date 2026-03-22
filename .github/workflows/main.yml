@@ -1,0 +1,37 @@
+name: 财联社焦点复盘分析
+
+on:
+  # 定时触发，每天下午6:15和早上7点运行
+  schedule:
+    - cron: '15 10 * * 1-5'  # UTC时间，对应北京时间18:15，周一到周五
+    - cron: '0 23 * * 1-5'  # UTC时间，对应北京时间7:00，周一到周五
+  # 手动触发
+  workflow_dispatch:
+
+jobs:
+  run-cls-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: 设置Node.js环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: 设置Python环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      
+      - name: 安装Node.js依赖
+        run: npm install
+      
+      - name: 安装Python依赖
+        run: pip install requests beautifulsoup4
+      
+      - name: 运行财联社焦点复盘分析
+        run: node index.js
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
