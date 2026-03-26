@@ -4,7 +4,7 @@ on:
   # 定时触发，每天下午6:15和早上5点运行
   schedule:
     - cron: '15 10 * * 1-5'  # UTC时间，对应北京时间18:15，周一到周五
-   - cron: '0 21 * * 1-5'  # UTC时间，对应北京时间5:00，周一到周五
+    - cron: '0 21 * * 1-5'  # UTC时间，对应北京时间5:00，周一到周五
   # 手动触发
   workflow_dispatch:
 
@@ -34,4 +34,6 @@ jobs:
         run: node index.js
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          FEISHU_WEBHOOK: ${{ secrets.FEISHU_WEBHOOK }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          feishu_webhook: ${{ secrets.feishu_webhook }}
