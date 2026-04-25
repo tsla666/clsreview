@@ -11,6 +11,11 @@ on:
 jobs:
   run-cls-review:
     runs-on: ubuntu-latest
+     env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          feishu_webhook: ${{ secrets.feishu_webhook }}
     steps:
       - uses: actions/checkout@v4
       
@@ -32,8 +37,4 @@ jobs:
       
       - name: 运行财联社焦点复盘分析
         run: node index.js
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          DEEPSEEK_BASE_URL: ${{ secrets.DEEPSEEK_BASE_URL }}
-          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
-          feishu_webhook: ${{ secrets.feishu_webhook }}
+       
